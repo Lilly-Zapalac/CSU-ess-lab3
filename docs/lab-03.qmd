@@ -1,0 +1,73 @@
+---
+title: "lab 3: Covid-19"
+subtitle: "ESS 330"
+author: 
+  -name: Lilly Zapalac
+   email:lillyannezap@gmail.com
+format: html
+editor: visual
+---
+
+## 
+```{r}
+library(tidyverse)
+install.packages("flextable")
+library(flextable)
+install.packages("zoo")
+library(zoo)
+```
+Question 1:
+```{r}
+
+```
+
+Question 2:
+```{r}
+library(tidyverse); library(flextable)
+covid_data = read_csv('https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv')
+```
+
+```{r}
+txt <- "2022-02-01"
+class(txt)
+
+date_example <- as.Date(txt)
+class(date_example)
+```
+
+```{r}
+my.date <- as.Date("2022-02-01")
+my.state <- "Colorado"
+```
+
+```{r}
+colorado <- covid_data %>%
+  filter(state == my.state) %>%
+  group_by(county) %>%
+  arrange(date) %>%
+  mutate(new_cases = cases - lag(cases), new_deaths = deaths - lag(deaths)) %>%
+  ungroup()
+```
+
+```{r}
+filter(colorado, date == my.date) %>%
+  slice_max(cases, n= 5) %>%
+  select(Date = date, County = county, Cases = cases) %>%
+  flextable() %>%
+  set_caption(caption = "Most Cumulative Cases")
+
+filter(colorado, date == my.date) %>%
+  slice_max(cases, n = 5) %>%
+  select(Date = date, County = county, Cases = new_cases) %>%
+  flextable() %>%
+  set_caption(caption = "Most New Cases")
+
+```
+
+Question 3:
+```{r}
+pop_url <- 'https://www2.census.gov/programs-surveys/popest/datasets/2020-2023/counties/totals/co-est2023-alldata.csv'
+
+read_csv(pop_url)
+```
+

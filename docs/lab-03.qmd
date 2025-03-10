@@ -11,13 +11,14 @@ editor: visual
 ## 
 ```{r}
 library(tidyverse)
-install.packages("flextable")
 library(flextable)
-install.packages("zoo")
 library(zoo)
 ```
 Question 1:
 ```{r}
+## Having access to historial and real-time environmental data shapes our understanding of trends and management because it allows us to have references. Therefore, we can see if there has been any changes.
+
+## If this data becomes inaccesible then we won't be able to see trends and therefore we don't know if anything has changed or what is currently going on.
 
 ```
 
@@ -69,5 +70,257 @@ Question 3:
 pop_url <- 'https://www2.census.gov/programs-surveys/popest/datasets/2020-2023/counties/totals/co-est2023-alldata.csv'
 
 read_csv(pop_url)
+```
+```{r}
+pop_url <- 'https://www2.census.gov/programs-surveys/popest/datasets/2020-2023/counties/totals/co-est2023-alldata.csv'
+pop <- read_csv(pop_url) %>%
+  filter(COUNTY != "000") %>%
+  mutate(fips = paste0(sprintf("%02s", STATE), sprintf("%03s", COUNTY)))
+
+pop <- pop %>%
+  select(contains("2021"), contains("NAME"), contains("fips"))
+
+pop
+```
+
+```{r}
+library(dplyr)
+names(covid_data)
+dim(covid_data)
+nrow(covid_data)
+str(covid_data)
+glimpse(covid_data)
+
+## The names of the columns are date, county, state, fips, cases, and deaths. The dimensions are 2,502,832 x 6.
+
+```
+
+```{r}
+names(pop)
+dim(pop)
+nrow(pop)
+str(pop)
+glimpse(pop)
+
+## The column names are POPESTIMATE2021, NPOPCHG2021, BIRTHS2021, DEATHS2021, NATURAL CHG2021, INTERNATIONALMIG2021, DOMESTICMIG2021, NETMIG2021, RESIDUAl2021, GQESTIMATE2021, RBIRTH2021, RDEATH2021, RNATURALCHG2021, "RINTERNATIONALMIG2021, RDOMESTICMIG2021 , RNETMIG2021, STNAME, CTYNAME, fips. fips is the same in both the pop and covid_data. The dimensions are 3144 x 18. The data after modification shows only the data from the covid_data that had 2021, name, and fips in the title
+```
+
+```{r}
+
+colorado <- colorado %>%
+  mutate(stateFIP = sprintf("%02s", state), sprintf("%03s", county))
+  
+colorado_pop <- colorado %>%
+  filter(state == "Colorado")
+
+population_range <- range(pop$POPESTIMATE2021)
+population_range
+  
+```
+
+```{r}
+colorado <- colorado %>%
+  inner_join(pop, by = "fips") %>%
+  mutate(
+    cases_per_capita = cases / POPESTIMATE2021, 
+    deaths_per_capita = cases / POPESTIMATE2021,
+    new_cases_per_capita = new_cases / POPESTIMATE2021, 
+    new_deaths_per_capita = new_deaths / POPESTIMATE2021)
+##check for x for POPESTIMATE2021
+
+colorado_formatted <- colorado %>%
+select(1:8, 11, 29:32)
+
+
+colorado
+
+```
+
+```{r}
+library(flextable)
+worst_cum_cases <- colorado_formatted %>%
+  filter(date == my.date) %>%
+  slice_max(cases_per_capita, n = 5) %>%
+  select(-state, -fips)
+
+most_new_cases <- colorado_formatted %>%
+  filter(date == my.date) %>%
+  slice_max(new_cases_per_capita, n = 5) %>%
+  select(-state, -fips)
+
+flextable(worst_cum_cases) %>%
+  set_caption("Top 5 Colorado Counties with the Most Cumulative Covid Cases") %>%
+  set_header_labels(date = "Date", county = "County", cases = "Cases", deaths = "Deaths", new_cases = "New Cases", new_deaths = "New Deaths", POPESTIMATE2021 = "Pop. Estimate 2021", cases_per_capita = "Cases Per Capita", deaths_per_capita = "Deaths Per Capita", new_cases_per_capita = "New Cases Per Capita", new_deaths_per_capita = "New Deaths Per Capita")
+
+flextable(most_new_cases) %>%
+  set_caption("Top 5 Colorado Counties with the Most New Covid Cases") %>%
+  set_header_labels(date = "Date", county = "County", cases = "Cases", deaths = "Deaths", new_cases = "New Cases", new_deaths = "New Deaths", POPESTIMATE2021 = "Pop. Estimate 2021", cases_per_capita = "Cases Per Capita", deaths_per_capita = "Deaths Per Capita", new_cases_per_capita = "New Cases Per Capita", new_deaths_per_capita = "New Deaths Per Capita")
+
+```
+Question 4:
+```{r}
+colorado_formatted_14_days <- colorado_formatted %>%
+  filter(between(date, my.date -13, my.date)) %>%
+  group_by(county) %>%
+  summarise(perCapitaDeathsper100K = 100000*sum(new_cases)/ POPESTIMATE2021[1]) %>% 
+  select(County = county, Cases = perCapitaDeathsper100K) %>%
+  slice_max(Cases, n = 5) %>%
+  flextable() %>%
+    set_caption(caption = "Cases per 100000 in the last 14 days")
+
+colorado_formatted_14_days
+  
+```
+Question 5:
+```{r}
+library(tidyverse)
+covid_deaths_2021 <- colorado %>%
+  group_by(county) %>%
+  summarize(total_covid_deaths = sum(new_deaths, na.rm = TRUE), .groups = "drop")
+
+death_ratio_data <- covid_deaths_2021 %>%
+  left_join(colorado %>%
+              select(county, DEATHS2021) %>% distinct(), by = c("county")) %>%
+  mutate(death_ratio_data = (total_covid_deaths / DEATHS2021) *100)
+
+counties_over_20_percent <- death_ratio_data %>%
+  filter(death_ratio_data >= 20)
+
+ggplot(counties_over_20_percent) +
+  geom_col(aes(x = death_ratio_data, y = county)) +
+  labs(
+    title = "Counties with COVID Deaths Accounting for 20% of More of Total Deaths in 2021",
+       x = "Covid Deaths as % of Total Deaths",
+       y = "County",
+       fill = "Percentage") +
+  theme_minimal() +
+  scale_fill_gradient(low = "green", high = "red") +
+  theme(
+    axis.text.y = element_text(size = 3))
+```
+Question 6:
+```{r}
+library(dplyr)
+states_daily_new_cases <- covid_data %>% 
+  filter(state %in% c("New York", "Colorado", "Alabama", "Ohio")) %>%
+  group_by(state, date) %>%
+  summarise(daily_new_cases = sum(cases, na.rm = TRUE), .groups = "drop") %>%
+  mutate(new_cases_lagged = abs(daily_new_cases - lag(daily_new_cases)), rolling_mean_7_day = zoo::rollmean(new_cases_lagged, k = 7, fill = NA, align = "right"))
+
+states_daily_new_cases
+```
+
+
+```{r}
+ggplot(states_daily_new_cases) +
+  geom_col(aes(x = date, y = new_cases_lagged)) +
+  labs(title = "Daily New COVID Cases 7 Day Rolling Averages", 
+       subtitle = "Comparing New York, Colorado, Alabama, and Ohio COVID 7 Day Rolling Averages") +
+  theme_linedraw() +
+  facet_wrap(~state, nrow = 2, scale = "free_y") +
+  theme(
+    axis.text.x = element_text(size = 5), axis.text.y = element_text(size = 5))
+```
+
+
+```{r}
+state_covid_pop_estimates <- states_daily_new_cases %>%
+  group_by(state, date) %>%
+  summarize(daily_new_cases = sum(daily_new_cases, na.rm = TRUE), .groups = "drop") %>%
+  filter(state %in% c("New York", "Colorado", "Alabama", "Ohio")) %>%
+  arrange(state, date) %>%
+  mutate(new_cases_lagged = abs(daily_new_cases - lag(daily_new_cases, order_by = date)))
+
+state_population <- pop %>%
+  select(STNAME, POPESTIMATE2021) %>%
+  distinct(STNAME, .keep_all = TRUE)
+
+colnames(pop)[colnames(pop) == "STNAME"] <- "state"
+
+state_cases_per_capita <- pop %>%
+  inner_join(state_covid_pop_estimates, pop, by = "state") %>%
+  mutate(new_cases_per_capita = new_cases_lagged / POPESTIMATE2021, rolling_mean_per_capita = zoo::rollmean(new_cases_per_capita, k = 7, fill = NA, align = "right", na.rm = TRUE)) 
+
+state_covid_pop_estimates
+```
+
+```{r}
+ggplot(state_cases_per_capita) +
+  geom_line(aes(x = date, y = rolling_mean_per_capita, color = state), size = 1) +
+  theme_linedraw() +
+  labs(
+    title = "Average 7-day Rolling Averages of COVID Cases Per Capita", 
+    subtitle = "Comparison amongst New York, Colorado, Alabama, and Ohio",
+    x = "Date",
+    y = "New Cases Per Capita",
+    color = "State"
+  )
+```
+```{r}
+##Scaling by population impacts how the information looks because it lowers the amount of cases since you would divide by the population. Therefore, all states look better because the case amounts are lower than they truly are.
+```
+
+Question 7:
+```{r}
+location_url <-'https://raw.githubusercontent.com/mikejohnson51/csu-ess-330/refs/heads/main/resources/county-centroids.csv' 
+location_data = read_csv(location_url)
+
+location_data
+```
+```{r}
+Covid_location_data <- full_join(covid_data, location_data, by = "fips")
+Covid_location_data
+```
+
+```{r}
+weighted_center_mean <- Covid_location_data %>%
+  group_by(date) %>%
+  summarise(weight_mean_LON = sum(LON * cases, na.rm = TRUE) / sum(cases, na.rm = TRUE), weight_mean_LAT = sum(LAT * cases, na.rm = TRUE) / sum(cases, na.rm = TRUE), total_cases_per_day = sum(cases, na.rm = TRUE), month = format(date, "%m"), .groups = "drop")
+weighted_center_mean
+```
+```{r}
+ggplot(weighted_center_mean) +
+  borders("state", fill = "grey", colour = "skyblue") +
+ geom_point(aes(x = weight_mean_LON, y = weight_mean_LAT, size = total_cases_per_day), color = "red", alpha = .25) +
+  theme_linedraw() +
+  labs(
+    x = "",
+    y = "",
+    title = "Weighted Mean Center of COVID outbreak in the USA",
+    subtitle = "Weighted means across each state",
+    color = "Time",
+    theme(legend.position = "none"))
+ 
+
+```
+
+Question 8:
+```{r}
+library(patchwork)
+weighted_mean_center_daily_COVID_deaths <- colorado_formatted %>%
+  filter(new_deaths != "0", na.rm = TRUE) %>%
+  group_by(new_deaths, cases)
+
+p1 <- ggplot(weighted_mean_center_daily_COVID_deaths) +
+  geom_point(aes(x = date, y = cases), color = "red", size = 1) +
+  theme_minimal() +
+  labs(
+    title = "Cases Over Time",
+    plot.title = element_text(hjust = 0.5, vjust = 2, size = 16),
+  ) + 
+  theme(
+    axis.text.x = element_text(size = 5) 
+  )
+
+p2 <- ggplot(weighted_mean_center_daily_COVID_deaths) +
+  geom_point(aes(x = date, y = deaths), color = "navy", size = 1) +
+  theme_minimal() +
+  labs(
+    title = "Deaths Over Time",
+    plot.title = element_text(hjust = 0.5, vjust = 2, size = 16),
+  ) +
+   theme(
+    axis.text.x = element_text(size = 5))
+p1 | p2
 ```
 

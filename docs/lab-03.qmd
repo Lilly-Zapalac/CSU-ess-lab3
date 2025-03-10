@@ -5,6 +5,8 @@ author:
   -name: Lilly Zapalac
    email:lillyannezap@gmail.com
 format: html
+execute: 
+  echo: true
 editor: visual
 ---
 
@@ -115,6 +117,8 @@ colorado_pop <- colorado %>%
 
 population_range <- range(pop$POPESTIMATE2021)
 population_range
+
+##the range of covid case populations seen in Colorado counties in 2021 is between 54 and 9809462
   
 ```
 

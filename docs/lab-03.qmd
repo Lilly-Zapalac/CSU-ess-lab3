@@ -55,13 +55,13 @@ filter(colorado, date == my.date) %>%
   slice_max(cases, n= 5) %>%
   select(Date = date, County = county, Cases = cases) %>%
   flextable() %>%
-  set_caption(caption = "Most Cumulative Cases")
+  add_header_lines("Most Cumulative Cases")
 
 filter(colorado, date == my.date) %>%
   slice_max(cases, n = 5) %>%
   select(Date = date, County = county, Cases = new_cases) %>%
   flextable() %>%
-  set_caption(caption = "Most New Cases")
+  add_header_lines("Most New Cases")
 
 ```
 
@@ -149,12 +149,16 @@ most_new_cases <- colorado_formatted %>%
   select(-state, -fips)
 
 flextable(worst_cum_cases) %>%
-  set_caption("Top 5 Colorado Counties with the Most Cumulative Covid Cases") %>%
+  add_header_lines("Top 5 Colorado Counties with the Most Cumulative Covid Cases") %>%
   set_header_labels(date = "Date", county = "County", cases = "Cases", deaths = "Deaths", new_cases = "New Cases", new_deaths = "New Deaths", POPESTIMATE2021 = "Pop. Estimate 2021", cases_per_capita = "Cases Per Capita", deaths_per_capita = "Deaths Per Capita", new_cases_per_capita = "New Cases Per Capita", new_deaths_per_capita = "New Deaths Per Capita")
 
+  
+
 flextable(most_new_cases) %>%
-  set_caption("Top 5 Colorado Counties with the Most New Covid Cases") %>%
+  add_header_lines("Top 5 Colorado Counties with the Most New Covid Cases") %>%
   set_header_labels(date = "Date", county = "County", cases = "Cases", deaths = "Deaths", new_cases = "New Cases", new_deaths = "New Deaths", POPESTIMATE2021 = "Pop. Estimate 2021", cases_per_capita = "Cases Per Capita", deaths_per_capita = "Deaths Per Capita", new_cases_per_capita = "New Cases Per Capita", new_deaths_per_capita = "New Deaths Per Capita")
+
+  
 
 ```
 Question 4:
@@ -166,7 +170,7 @@ colorado_formatted_14_days <- colorado_formatted %>%
   select(County = county, Cases = perCapitaDeathsper100K) %>%
   slice_max(Cases, n = 5) %>%
   flextable() %>%
-    set_caption(caption = "Cases per 100000 in the last 14 days")
+    add_header_lines("Cases per 100000 in the last 14 days")
 
 colorado_formatted_14_days
   

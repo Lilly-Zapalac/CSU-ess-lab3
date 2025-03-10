@@ -3,6 +3,7 @@ project:
   output-dir: docs
   type: website
 
-format: 
-  html: 
+format:
+  html:
     self-contained: true
+

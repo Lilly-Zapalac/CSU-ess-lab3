@@ -5,7 +5,7 @@ author:
   -name: Lilly Zapalac
    email:lillyannezap@gmail.com
 format: html
-execute: 
+execute:
   echo: true
 editor: visual
 ---
